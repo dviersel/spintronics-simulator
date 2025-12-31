@@ -39,10 +39,16 @@
       "electronic_equivalent": "Elektrische spoel"
     },
     "phonograph": {
-      "name": "Ampèremeter",
+      "name": "Audiometer",
       "shortcut": "P",
-      "description": "Meet de stroomsterkte door het circuit. De naald toont hoe snel en in welke richting de ketting draait. Gebruik deze om je circuits te analyseren.",
-      "electronic_equivalent": "Ampèremeter / stroommeter"
+      "description": "Produceert geluid op basis van stroomsterkte. De toonhoogte en het volume veranderen met de kettingsnelheid. Gebruik deze om het gedrag van je circuit te horen.",
+      "electronic_equivalent": "Audio-oscillator / luidspreker"
+    },
+    "ammeter": {
+      "name": "Wijzer-Ampèremeter",
+      "shortcut": "A",
+      "description": "Toont stroom als visuele meter met naaldaanwijzer. Klik om het schaalbereik te wijzigen. Toont zowel de sterkte als de richting van de stroom.",
+      "electronic_equivalent": "Analoge ampèremeter / galvanometer"
     },
     "diode": {
       "name": "Diode",

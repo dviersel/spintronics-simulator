@@ -219,6 +219,7 @@ function preload ()
     this.load.image('capacitor-icon', 'Images/capacitor-icon.png');
     this.load.image('button-icon', 'Images/button-icon.png');
     this.load.image('phonograph-icon', 'Images/phonograph-icon.png');
+    this.load.image('ammeter-icon', 'Images/ammeter-icon.png');
     this.load.image('transistor-icon', 'Images/transistor-icon.png');
     this.load.image('level-changer-icon', 'Images/level-changer-icon.png');
     this.load.image('diode-icon', 'Images/diode-icon.png');
@@ -293,6 +294,11 @@ function preload ()
     this.load.image('phonograph', 'Images/phonograph.png');
     this.load.image('phonograph-base', 'Images/phonograph-base.png');
     this.load.image('phonograph-sprocket', 'Images/phonograph-sprocket.png');
+
+    this.load.image('ammeter-sprocket', 'Images/ammeter-sprocket.png');
+    this.load.image('ammeter-dial', 'Images/ammeter-dial.png');
+    this.load.image('ammeter-bezel', 'Images/ammeter-bezel.png');
+    this.load.image('ammeter-needle', 'Images/ammeter-needle.png');
 
     this.load.image('diode', 'Images/diode.png');
     this.load.image('diode-base', 'Images/diode-base.png');
@@ -518,6 +524,10 @@ function create ()
     this.tilebutton.setButtonType('toggle');
     this.tilebutton.setTooltipString('Tile [H]', 'right');
     this.tilebutton.setKeyboardShortcut('H');
+    this.ammeterbutton = new ToggleButton(controlscene, 'ammeter', buttonX, topMargin + 35+12*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'ammeter-icon', onSwitchToggled, 'button-disabled-background');
+    this.ammeterbutton.setButtonType('toggle');
+    this.ammeterbutton.setTooltipString('Gauge Ammeter [A]', 'right');
+    this.ammeterbutton.setKeyboardShortcut('A');
 
 
     // Right side toolbar
@@ -740,6 +750,7 @@ function updateButtonTooltips()
         'capacitor': this.capacitorbutton,
         'inductor': this.inductorbutton,
         'phonograph': this.phonographbutton,
+        'ammeter': this.ammeterbutton,
         'diode': this.diodebutton,
         'button': this.buttonbutton,
         'transistor': this.transistorbutton,
@@ -2279,6 +2290,12 @@ function onPointerDown(pointer, currentlyOver)
         partManager.addPart('tile', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
         // Update all the tile connectors
         partManager.updateTileConnectors();
+        checkOneShotMode();
+    }
+    else if (this.ammeterbutton.getToggleState())
+    {
+        var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
+        partManager.addPart('ammeter', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
         checkOneShotMode();
     }
     else if (this.chainbutton.getToggleState())

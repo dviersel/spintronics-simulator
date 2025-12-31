@@ -39,10 +39,16 @@
       "electronic_equivalent": "Electrical inductor"
     },
     "phonograph": {
-      "name": "Ammeter",
+      "name": "Audio Meter",
       "shortcut": "P",
-      "description": "Measures current flow through the circuit. The needle shows how fast and in which direction the chain is spinning. Use it to debug your circuits.",
-      "electronic_equivalent": "Ammeter / current meter"
+      "description": "Produces sound based on current flow. The pitch and volume change with chain speed. Use it to hear your circuit's behavior.",
+      "electronic_equivalent": "Audio oscillator / speaker"
+    },
+    "ammeter": {
+      "name": "Gauge Ammeter",
+      "shortcut": "A",
+      "description": "Displays current as a visual gauge with needle indicator. Click to change scale range. Shows both magnitude and direction of current flow.",
+      "electronic_equivalent": "Analog ammeter / galvanometer"
     },
     "diode": {
       "name": "Diode",

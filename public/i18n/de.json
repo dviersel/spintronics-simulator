@@ -39,10 +39,16 @@
       "electronic_equivalent": "Elektrische Spule"
     },
     "phonograph": {
-      "name": "Amperemeter",
+      "name": "Audio-Messgerät",
       "shortcut": "P",
-      "description": "Misst den Stromfluss durch den Stromkreis. Die Nadel zeigt, wie schnell und in welche Richtung sich die Kette dreht. Verwenden Sie es zur Fehlersuche in Ihren Stromkreisen.",
-      "electronic_equivalent": "Amperemeter / Strommesser"
+      "description": "Erzeugt Ton basierend auf dem Stromfluss. Tonhohe und Lautstarke andern sich mit der Kettengeschwindigkeit. Verwenden Sie es, um das Verhalten Ihres Stromkreises zu horen.",
+      "electronic_equivalent": "Audio-Oszillator / Lautsprecher"
+    },
+    "ammeter": {
+      "name": "Zeiger-Amperemeter",
+      "shortcut": "A",
+      "description": "Zeigt den Strom als visuelle Anzeige mit Nadelanzeige an. Klicken Sie, um den Skalenbereich zu andern. Zeigt sowohl Starke als auch Richtung des Stromflusses.",
+      "electronic_equivalent": "Analoges Amperemeter / Galvanometer"
     },
     "diode": {
       "name": "Diode",

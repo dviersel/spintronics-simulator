@@ -39,10 +39,16 @@
       "electronic_equivalent": "Inductance electrique"
     },
     "phonograph": {
-      "name": "Amperemetre",
+      "name": "Compteur Audio",
       "shortcut": "P",
-      "description": "Mesure le flux de courant dans le circuit. L'aiguille indique la vitesse et la direction de rotation de la chaine. Utilisez-le pour deboguer vos circuits.",
-      "electronic_equivalent": "Amperemetre / mesureur de courant"
+      "description": "Produit du son base sur le flux de courant. La hauteur et le volume changent avec la vitesse de la chaine. Utilisez-le pour entendre le comportement de votre circuit.",
+      "electronic_equivalent": "Oscillateur audio / haut-parleur"
+    },
+    "ammeter": {
+      "name": "Amperemetre a Aiguille",
+      "shortcut": "A",
+      "description": "Affiche le courant sous forme de jauge visuelle avec indicateur a aiguille. Cliquez pour changer l'echelle. Montre l'amplitude et la direction du courant.",
+      "electronic_equivalent": "Amperemetre analogique / galvanometre"
     },
     "diode": {
       "name": "Diode",

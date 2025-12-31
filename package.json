@@ -25,6 +25,7 @@
     "ssl-express-www": "^3.2.1"
   },
   "devDependencies": {
+    "canvas": "^3.2.0",
     "got": "^11.8.6",
     "serve": "^14.2.5",
     "tape": "^5.9.0"

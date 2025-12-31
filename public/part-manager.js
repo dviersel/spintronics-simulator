@@ -9,6 +9,7 @@ import { MotorPart } from './parts/motor-part.js';
 import { LevelChangerPart } from './parts/level-changer-part.js';
 import { DiodePart } from './parts/diode-part.js';
 import { PhonographPart } from './parts/phonograph-part.js';
+import { AmmeterPart } from './parts/ammeter-part.js';
 import { TilePart } from './parts/tile-part.js'
 import { TileConnectorPart } from './parts/tile-connector-part.js'
 import { Chain } from './chain.js'
@@ -171,6 +172,28 @@ export class PartManager {
             newPart.setDragStartCallback(this.onPartDragStart, this);
             newPart.setDragCallback(this.onPartDrag, this);
             newPart.setDragEndCallback(this.onPartDragEnd, this);
+            this.parts.push(newPart);
+            return newPart;
+        }
+        else if (partType == 'ammeter') {
+            var newPart = new AmmeterPart(this.scene, x, y, this.world);
+            newPart.setPointerDownCallback(this.onPartClicked, this);
+            newPart.setPointerMoveCallback(this.onPointerMoveOverPart, this);
+            newPart.setPointerOutCallback(this.onPointerMoveOutOfPart, this);
+            newPart.setDragStartCallback(this.onPartDragStart, this);
+            newPart.setDragCallback(this.onPartDrag, this);
+            newPart.setDragEndCallback(this.onPartDragEnd, this);
+            if (value != null) {
+                // Restore the scale index
+                const scaleIndex = AmmeterPart.scaleRanges.indexOf(value) !== -1
+                    ? AmmeterPart.scaleRanges.indexOf(value)
+                    : value;
+                if (typeof scaleIndex === 'number' && scaleIndex >= 0 && scaleIndex < AmmeterPart.scaleRanges.length) {
+                    newPart.scaleIndex = scaleIndex;
+                    newPart.maxCurrent = AmmeterPart.scaleRanges[scaleIndex];
+                    newPart.scaleText.setText(AmmeterPart.scaleLabels[scaleIndex]);
+                }
+            }
             this.parts.push(newPart);
             return newPart;
         }
