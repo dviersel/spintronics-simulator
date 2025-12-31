@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express')
 const session = require('express-session')
 const cookieParser = require('cookie-parser');
@@ -12,7 +14,7 @@ try {
     console.log('crypto support is disabled!');
 }
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Maximum age of sessions. What happens when cookie expires, but webpage still has old code?
 const oneDay = 1000 * 60 * 60 * 24;
@@ -69,8 +71,8 @@ const pgconfig = {
     port: process.env.PG_PORT
 };
 
-// Create the table in the database if it doesn't exist.
-createDatabaseAndTableIfNotExist();
+// Track database connection status
+let dbConnected = false;
 
 // Connect to the circuit_db database. We leave the connection open all the time.
 console.log("Start persistent connection to database.");
@@ -85,10 +87,30 @@ const client = process.env.NODE_ENV == 'local' ? new pg.Client({database: "circu
             rejectUnauthorized: false
         }
     });
-client.connect();
+
+// Attempt connection asynchronously (non-blocking)
+client.connect()
+    .then(() => {
+        console.log('✓ Database connected successfully');
+        dbConnected = true;
+        // Create table if needed after successful connection
+        return createTableIfNotExist();
+    })
+    .catch(err => {
+        console.warn('⚠ Database connection failed - save/load features disabled');
+        console.warn('⚠ Circuit simulator will work normally');
+        console.warn('Error:', err.message);
+    });
 
 // Endpoints
 app.get('/getcode', function(req, res){
+    // Check database availability first
+    if (!dbConnected) {
+        return res.status(503).json({
+            error: 'Database not available'
+        });
+    }
+
     if (req.session.timetoken) {
         // Already have a code in this session - just return the same code
         res.json({code: req.session.encrypted});
@@ -110,6 +132,14 @@ app.get('/getcode', function(req, res){
 });
 
 app.post('/savecircuit', function(req, res){
+    // Check database availability first
+    if (!dbConnected) {
+        return res.status(503).json({
+            error: 'Database not available',
+            message: 'Cannot save circuits without database connection'
+        });
+    }
+
     // Decipher the encrypted token
     console.log("Saving circuit")
     const decipher = crypto.createDecipheriv(process.env.CIPHER_ALGORITHM, process.env.CIPHER_SECRET, Buffer.from(req.session.iv, 'hex'));
@@ -147,6 +177,13 @@ app.post('/savecircuit', function(req, res){
 });
 
 app.post('/getlink', function(req, res) {
+    // Check database availability first
+    if (!dbConnected) {
+        return res.status(503).json({
+            error: 'Database not available'
+        });
+    }
+
     const decipher = crypto.createDecipheriv(process.env.CIPHER_ALGORITHM, process.env.CIPHER_SECRET, Buffer.from(req.session.iv, 'hex'));
     let decrypted = Buffer.concat([decipher.update(Buffer.from(req.body.code, 'base64')), decipher.final()]).toString();
 
@@ -175,6 +212,13 @@ app.post('/getlink', function(req, res) {
 });
 
 app.post('/getcircuit', function(req, res) {
+    // Check database availability first
+    if (!dbConnected) {
+        return res.status(503).json({
+            error: 'Database not available'
+        });
+    }
+
     const decipher = crypto.createDecipheriv(process.env.CIPHER_ALGORITHM, process.env.CIPHER_SECRET, Buffer.from(req.session.iv, 'hex'));
     let decrypted = Buffer.concat([decipher.update(Buffer.from(req.body.code, 'base64')), decipher.final()]).toString();
 
@@ -219,6 +263,14 @@ app.post('/getcircuit', function(req, res) {
 });
 
 app.post('/loadcircuit', function(req, res) {
+    // Check database availability first
+    if (!dbConnected) {
+        return res.status(503).json({
+            error: 'Database not available',
+            message: 'Cannot load circuits without database connection'
+        });
+    }
+
     const decipher = crypto.createDecipheriv(process.env.CIPHER_ALGORITHM, process.env.CIPHER_SECRET, Buffer.from(req.session.iv, 'hex'));
     let decrypted = Buffer.concat([decipher.update(Buffer.from(req.body.code, 'base64')), decipher.final()]).toString();
 
@@ -349,78 +401,21 @@ function validateCircuit(circuitJSON)
     return false;
 }
 
-app.listen(PORT, () => console.log(`Listening on ${ PORT }`));
+const server = app.listen(PORT, () => console.log(`Listening on ${ PORT }`));
 
-async function createDatabaseAndTableIfNotExist() {
-    let client;
-    let db_exists = true;
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please kill the process using this port or use a different port.`);
+    process.exit(1);
+  }
+});
 
-    if (process.env.NODE_ENV == 'local') {
-        client = new pg.Client();
-        client.connect();
-
-        // Check if the circuit_db database exists
-        await client.query("SELECT datname FROM pg_catalog.pg_database WHERE datname=\'circuit_db\';").then(res => {
-            //const fields = res.fields.map(field => field.name);
-            //console.log("Database exists.");
-            //console.log(res.rowCount);
-            if (res.rowCount > 0) {
-                console.log("Database exists.")
-                db_exists = true;
-            } else {
-                console.log("Database does not exist.")
-                db_exists = false;
-            }
-
-        }).catch(err => {
-            //console.log(err.stack);
-            console.log("Error checking if database exists.");
-        }).finally(() => {
-
-        });
-
-        // If the database doesn't exist, create it.
-        if (!db_exists) {
-            await client.query('CREATE DATABASE circuit_db').then(res => {
-                console.log("Created the database successfully.");
-                db_exists = true;
-            }).catch(err => {
-                console.log("Couldn't create the database.");
-            }).finally(() => {
-
-            });
-        }
-
-        // Disconnect from the database.
-        client.end();
-    }
-
-    // Now connect to the database and check to see if it has the required data table.
-    if (db_exists) {
-        // Connect to the circuit_db database.
-        console.log("Connecting to database.");
-        client = process.env.NODE_ENV == 'local' ? new pg.Client({database: "circuit_db"}) : new pg.Client(
-            {
-                user: process.env.REMOTE_PGUSER,
-                password: process.env.REMOTE_PGPASSWORD,
-                database:  process.env.REMOTE_PGDATABASE,
-                port: process.env.REMOTE_PGPORT,
-                host: process.env.REMOTE_PGHOST,
-                ssl: {
-                    rejectUnauthorized: false
-                }
-            });
-        client.connect();
-
-        await client.query("CREATE TABLE circuit_table (link_id SERIAL PRIMARY KEY, user_IP VARCHAR(255), date_added TIMESTAMPTZ, times_accessed BIGINT, circuit_json TEXT);").then(res => {
-            console.log("Table created successfully.")
-        }).catch(err => {
-            //console.log(err.stack);
-            console.log("Table creation failed. (It probably already exists.)");
-        }).finally(() => {
-
-        });
-
-        client.end();
+// Simplified function to create table if needed (assumes already connected to database)
+async function createTableIfNotExist() {
+    try {
+        await client.query("CREATE TABLE IF NOT EXISTS circuit_table (link_id SERIAL PRIMARY KEY, user_IP VARCHAR(255), date_added TIMESTAMPTZ, times_accessed BIGINT, circuit_json TEXT);");
+        console.log("Table ready.");
+    } catch (err) {
+        console.log("Table creation failed:", err.message);
     }
 }

@@ -96,6 +96,32 @@ let disablePointerOverEvent = false;
 let popupLevelChooser = null;
 let controlscene = null;
 
+// Keyboard shortcut mapping for components and tools
+const KEYBOARD_SHORTCUTS = {
+    // Components
+    'N': 'chain',
+    'J': 'junction',
+    'B': 'motor',
+    'R': 'resistor',
+    'C': 'capacitor',
+    'I': 'inductor',
+    'P': 'phonograph',
+    'D': 'diode',
+    'U': 'button',
+    'T': 'transistor',
+    'L': 'level-changer',
+    'H': 'tile',
+
+    // Tools
+    'SPACE': 'interact',
+    'V': 'move',
+    'X': 'delete',
+    'E': 'edit'
+};
+
+// Track one-shot mode: when true, return to interact mode after placing one component
+let oneShotMode = false;
+
 function preload ()
 {
     self = this;
@@ -370,40 +396,52 @@ function create ()
     let topMargin = 6;
     this.chainbutton = new ToggleButton(controlscene, 'chain', buttonX, topMargin + 35, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'chain-icon', onSwitchToggled, 'button-disabled-background');
     this.chainbutton.setButtonType('toggle');
-    this.chainbutton.setTooltipString('Add chain loop', 'right');
+    this.chainbutton.setTooltipString('Add chain loop [N]', 'right');
+    this.chainbutton.setKeyboardShortcut('N');
     this.junctionbutton = new ToggleButton(controlscene, 'junction', buttonX, topMargin + 35+75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'junction-icon', onSwitchToggled, 'button-disabled-background');
     this.junctionbutton.setButtonType('toggle');
-    this.junctionbutton.setTooltipString('Junction', 'right');
+    this.junctionbutton.setTooltipString('Junction [J]', 'right');
+    this.junctionbutton.setKeyboardShortcut('J');
     this.motorbutton = new ToggleButton(controlscene, 'motor', buttonX, topMargin + 35+2*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'motor-icon', onSwitchToggled, 'button-disabled-background');
     this.motorbutton.setButtonType('toggle');
-    this.motorbutton.setTooltipString('Battery', 'right');
+    this.motorbutton.setTooltipString('Battery [B]', 'right');
+    this.motorbutton.setKeyboardShortcut('B');
     this.resistorbutton = new ToggleButton(controlscene, 'resistor', buttonX, topMargin + 35+3*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'resistor-icon', onSwitchToggled, 'button-disabled-background');
     this.resistorbutton.setButtonType('toggle');
-    this.resistorbutton.setTooltipString('Resistor', 'right');
+    this.resistorbutton.setTooltipString('Resistor [R]', 'right');
+    this.resistorbutton.setKeyboardShortcut('R');
     this.capacitorbutton = new ToggleButton(controlscene, 'capacitor', buttonX, topMargin + 35+4*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'capacitor-icon', onSwitchToggled, 'button-disabled-background');
     this.capacitorbutton.setButtonType('toggle');
-    this.capacitorbutton.setTooltipString('Capacitor', 'right');
+    this.capacitorbutton.setTooltipString('Capacitor [C]', 'right');
+    this.capacitorbutton.setKeyboardShortcut('C');
     this.inductorbutton = new ToggleButton(controlscene, 'inductor', buttonX, topMargin + 35+5*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'inductor-icon', onSwitchToggled, 'button-disabled-background');
     this.inductorbutton.setButtonType('toggle');
-    this.inductorbutton.setTooltipString('Inductor', 'right');
+    this.inductorbutton.setTooltipString('Inductor [I]', 'right');
+    this.inductorbutton.setKeyboardShortcut('I');
     this.phonographbutton = new ToggleButton(controlscene, 'phonograph', buttonX, topMargin + 35+6*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'phonograph-icon', onSwitchToggled, 'button-disabled-background');
     this.phonographbutton.setButtonType('toggle');
-    this.phonographbutton.setTooltipString('Ammeter', 'right');
+    this.phonographbutton.setTooltipString('Ammeter [P]', 'right');
+    this.phonographbutton.setKeyboardShortcut('P');
     this.diodebutton = new ToggleButton(controlscene, 'diode', buttonX, topMargin + 35+7*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'diode-icon', onSwitchToggled, 'button-disabled-background');
     this.diodebutton.setButtonType('toggle');
-    this.diodebutton.setTooltipString('Diode', 'right');
+    this.diodebutton.setTooltipString('Diode [D]', 'right');
+    this.diodebutton.setKeyboardShortcut('D');
     this.buttonbutton = new ToggleButton(controlscene, 'button', buttonX, topMargin + 35+8*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'button-icon', onSwitchToggled, 'button-disabled-background');
     this.buttonbutton.setButtonType('toggle');
-    this.buttonbutton.setTooltipString('Switch', 'right');
+    this.buttonbutton.setTooltipString('Switch [U]', 'right');
+    this.buttonbutton.setKeyboardShortcut('U');
     this.transistorbutton = new ToggleButton(controlscene, 'transistor', buttonX, topMargin + 35+9*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'transistor-icon', onSwitchToggled, 'button-disabled-background');
     this.transistorbutton.setButtonType('toggle');
-    this.transistorbutton.setTooltipString('Transistor', 'right');
+    this.transistorbutton.setTooltipString('Transistor [T]', 'right');
+    this.transistorbutton.setKeyboardShortcut('T');
     this.levelchangerbutton = new ToggleButton(controlscene, 'level-changer', buttonX, topMargin + 35+10*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'level-changer-icon', onSwitchToggled, 'button-disabled-background');
     this.levelchangerbutton.setButtonType('toggle');
-    this.levelchangerbutton.setTooltipString('Level changer', 'right');
+    this.levelchangerbutton.setTooltipString('Level changer [L]', 'right');
+    this.levelchangerbutton.setKeyboardShortcut('L');
     this.tilebutton = new ToggleButton(controlscene, 'tile', buttonX, topMargin + 35+11*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'tile-icon', onSwitchToggled, 'button-disabled-background');
     this.tilebutton.setButtonType('toggle');
-    this.tilebutton.setTooltipString('Tile', 'right');
+    this.tilebutton.setTooltipString('Tile [H]', 'right');
+    this.tilebutton.setKeyboardShortcut('H');
 
 
     // Right side toolbar
@@ -411,16 +449,20 @@ function create ()
     let rightSideToolbarPositionX = spaceWidth - 10 - buttonWidth / 2;
     this.interactbutton = new ToggleButton(controlscene, 'interact', rightSideToolbarPositionX, 35, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'interact-icon', onSwitchToggled, 'button-disabled-background');
     this.interactbutton.setButtonType('toggle');
-    this.interactbutton.setTooltipString('Interact', 'left');
+    this.interactbutton.setTooltipString('Interact [SPACE]', 'left');
+    this.interactbutton.setKeyboardShortcut('␣');
     this.movebutton = new ToggleButton(controlscene, 'move', rightSideToolbarPositionX, 35+75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'move-icon', onSwitchToggled, 'button-disabled-background');
     this.movebutton.setButtonType('toggle');
-    this.movebutton.setTooltipString('Reposition part', 'left');
+    this.movebutton.setTooltipString('Reposition part [V]', 'left');
+    this.movebutton.setKeyboardShortcut('V');
     this.deletebutton = new ToggleButton(controlscene, 'delete', rightSideToolbarPositionX, 35+2*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'delete-icon', onSwitchToggled, 'button-disabled-background');
     this.deletebutton.setButtonType('toggle');
-    this.deletebutton.setTooltipString('Remove part', 'left');
+    this.deletebutton.setTooltipString('Remove part [X]', 'left');
+    this.deletebutton.setKeyboardShortcut('X');
     this.editbutton = new ToggleButton(controlscene, 'edit', rightSideToolbarPositionX, 35+3*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'edit-icon', onSwitchToggled, 'button-disabled-background');
     this.editbutton.setButtonType('toggle');
-    this.editbutton.setTooltipString('Change part properties', 'left');
+    this.editbutton.setTooltipString('Change part properties [E]', 'left');
+    this.editbutton.setKeyboardShortcut('E');
     this.removeallbutton = new ToggleButton(controlscene, 'remove-all', rightSideToolbarPositionX, 35+4*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'remove-all-icon', onRemoveAllClicked, 'button-disabled-background');
     this.removeallbutton.setTooltipString('Remove all', 'left');
     this.zoominbutton = new ToggleButton(controlscene, 'zoom-in', rightSideToolbarPositionX, 35+4*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'zoom-in-icon', onZoomInClicked, 'button-disabled-background');
@@ -483,6 +525,31 @@ function create ()
     this.input.on('wheel', (pointer, currentlyOver, deltaX, deltaY, deltaZ, event) => onPointerWheel.bind(this)(pointer, currentlyOver, deltaX, deltaY, deltaZ, event));
 
     this.input.keyboard.on('keydown-ESC', (event) => escapeKeyDown.bind(this)(event))
+
+    // Register keyboard shortcuts for components and tools
+    function registerKeyboardShortcuts() {
+        for (const [key, componentName] of Object.entries(KEYBOARD_SHORTCUTS)) {
+            self.input.keyboard.on(`keydown-${key}`, (event) => {
+                // Don't trigger shortcuts if popup is open
+                if (popupLevelChooser != null) {
+                    return;
+                }
+
+                // Check if Shift key is pressed
+                const isShiftPressed = event.shiftKey;
+
+                // One-shot mode: place one component then return to interact
+                // Stencil mode (Shift+key): keep placing components
+                oneShotMode = !isShiftPressed;
+
+                // Trigger the component/tool selection
+                onSwitchToggled(componentName, true);
+            });
+        }
+    }
+
+    // Call the registration function
+    registerKeyboardShortcuts();
 
     this.useZoomExtents = false;
     this.scale.on('resize', resize, this);
@@ -1660,6 +1727,14 @@ function drawHighlight(centerX, centerY, radius, thickness, angle, cw)
     }
 }
 
+// Helper function to check if we should return to interact mode after placement
+function checkOneShotMode() {
+    if (oneShotMode) {
+        oneShotMode = false;
+        onSwitchToggled('interact', true);
+    }
+}
+
 function onPointerDown(pointer, currentlyOver)
 {
     let worldPointer = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
@@ -1668,41 +1743,49 @@ function onPointerDown(pointer, currentlyOver)
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('junction', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.buttonbutton.getToggleState())
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('button', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.resistorbutton.getToggleState())
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('resistor', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.capacitorbutton.getToggleState())
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('capacitor', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.diodebutton.getToggleState())
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('diode', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.transistorbutton.getToggleState())
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('transistor', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.levelchangerbutton.getToggleState())
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('level-changer', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.phonographbutton.getToggleState())
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('phonograph', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.motorbutton.getToggleState())
     {
@@ -1710,11 +1793,13 @@ function onPointerDown(pointer, currentlyOver)
         partManager.addPart('motor', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
         // Update all the tile connectors
         partManager.updateTileConnectors();
+        checkOneShotMode();
     }
     else if (this.inductorbutton.getToggleState())
     {
         var snapPosition = PartBase.getSnapPosition(worldPointer, gridSpacing);
         partManager.addPart('inductor', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
+        checkOneShotMode();
     }
     else if (this.tilebutton.getToggleState())
     {
@@ -1722,7 +1807,7 @@ function onPointerDown(pointer, currentlyOver)
         partManager.addPart('tile', snapPosition.snapPoint.x, snapPosition.snapPoint.y);
         // Update all the tile connectors
         partManager.updateTileConnectors();
-
+        checkOneShotMode();
     }
     else if (this.chainbutton.getToggleState())
     {
@@ -2019,6 +2104,10 @@ function escapeKeyDown(event)
         popupLevelChooser = null;
         disablePointerOverEvent = false;
     }
+
+    // Always return to interact mode when ESC is pressed
+    oneShotMode = false;
+    onSwitchToggled('interact', true);
 }
 
 function getZoomExtents ()

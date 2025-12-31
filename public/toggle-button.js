@@ -50,6 +50,9 @@ export class ToggleButton extends Phaser.GameObjects.Container
 
         this.tooltipString = "";
         this.tooltipText = null;
+        this.keyboardShortcut = null;
+        this.keyboardShortcutText = null;
+        this.keyLabelBackground = null;
     }
 
     // Sets the button type: 'toggle' or 'default'
@@ -92,6 +95,45 @@ export class ToggleButton extends Phaser.GameObjects.Container
     setTooltipJustify(tooltipJustify)
     {
         this.tooltipJustify = tooltipJustify;
+    }
+
+    setKeyboardShortcut(key)
+    {
+        this.keyboardShortcut = key;
+
+        // Create the visual keyboard shortcut label
+        if (this.keyboardShortcutText == null && key != null) {
+            // Create background rectangle for the key label
+            const labelWidth = 18;
+            const labelHeight = 18;
+            const cornerOffset = 5;
+
+            // Position in bottom-right corner of button
+            const labelX = (this.width / 2) - labelWidth - cornerOffset;
+            const labelY = (this.height / 2) - labelHeight - cornerOffset;
+
+            // Create semi-transparent background
+            this.keyLabelBackground = this.thisScene.add.graphics();
+            this.keyLabelBackground.fillStyle(0x000000, 0.4);
+            this.keyLabelBackground.fillRoundedRect(labelX, labelY, labelWidth, labelHeight, 3);
+            this.add(this.keyLabelBackground);
+
+            // Create text label
+            this.keyboardShortcutText = this.thisScene.add.text(
+                labelX + labelWidth / 2,
+                labelY + labelHeight / 2,
+                key,
+                {
+                    font: '12px Roboto',
+                    fontSize: '12px',
+                    color: '#FFFFFF',
+                    fontStyle: 'bold'
+                }
+            );
+            this.keyboardShortcutText.setOrigin(0.5, 0.5);
+            this.keyboardShortcutText.alpha = 0.5;
+            this.add(this.keyboardShortcutText);
+        }
     }
 
     setToggleState (toggleState)
@@ -164,6 +206,11 @@ export class ToggleButton extends Phaser.GameObjects.Container
         this.buttonBackground.alpha = 1;
         this.buttonIcon.alpha = 1;
 
+        // Also make keyboard shortcut label more visible on hover
+        if (this.keyboardShortcutText != null) {
+            this.keyboardShortcutText.alpha = 1;
+        }
+
         // Draw the Tooltip
         if (this.tooltipString != "" && this.tooltipText == null) {
             // Make this button the top-most item
@@ -220,6 +267,11 @@ export class ToggleButton extends Phaser.GameObjects.Container
 
         this.buttonBackground.alpha = 0.5;
         this.buttonIcon.alpha = 0.5;
+
+        // Restore keyboard shortcut label to semi-transparent
+        if (this.keyboardShortcutText != null) {
+            this.keyboardShortcutText.alpha = 0.5;
+        }
 
         if (this.tooltipText != null)
         {
