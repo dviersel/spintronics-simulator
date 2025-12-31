@@ -271,11 +271,13 @@ export class PartManager {
         if (this.chainBeingBuilt == null)
             return retVal;
 
+        // Check if chain has any connections before accessing
+        if (this.chainBeingBuilt.connections.length === 0)
+            return retVal;
+
         for (let i = 0; i < this.parts.length; i++)
         {
-            //console.log(this.parts[partIndex]);
             if (this.chainBeingBuilt.connections[0].part == this.parts[i]) {
-
                 retVal.partIndex = i;
                 retVal.cw = this.chainBeingBuilt.connections[0].cw;
                 retVal.level = this.chainBeingBuilt.connections[0].level;
@@ -354,7 +356,7 @@ export class PartManager {
 
     getLevelOfChainBeingBuilt()
     {
-        if (this.chainBeingBuilt != null)
+        if (this.chainBeingBuilt != null && this.chainBeingBuilt.connections.length > 0)
             return this.chainBeingBuilt.connections[0].level;
         return -1;
     }
@@ -662,6 +664,10 @@ export class PartManager {
         if (nextSprocket == null)
             return null;
 
+        // Ensure chain has connections before accessing
+        if (this.chainBeingBuilt.connections.length === 0)
+            return null;
+
         let currentChainLevel = this.chainBeingBuilt.connections[0].level;
         let nextPart = this.parts[nextSprocket.partIndex];
         let lastChainPart = this.chainBeingBuilt.connections[this.chainBeingBuilt.connections.length - 1].part;
@@ -753,11 +759,11 @@ export class PartManager {
 
     getLastSprocketBoundsOfChainBeingBuilt()
     {
-        if (this.chainBeingBuilt == null)
+        if (this.chainBeingBuilt == null || this.chainBeingBuilt.connections.length === 0)
             return null;
 
         const part = this.chainBeingBuilt.connections[this.chainBeingBuilt.connections.length - 1].part;
-        const level = this.chainBeingBuilt.connections[this.chainBeingBuilt.connections.length - 1].level
+        const level = this.chainBeingBuilt.connections[this.chainBeingBuilt.connections.length - 1].level;
         let bounds = {
             x: part.x + part.sprocketCenter[level].x,
             y: part.y + part.sprocketCenter[level].y,

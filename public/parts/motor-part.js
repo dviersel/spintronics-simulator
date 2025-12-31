@@ -351,6 +351,30 @@ export class MotorPart extends PartBase
 
     destroy()
     {
+        // Helper to remove all event listeners from an image
+        const removeEvents = (img) => {
+            if (img) {
+                img.off('pointerdown');
+                img.off('pointermove');
+                img.off('pointerout');
+                img.off('dragstart');
+                img.off('dragend');
+                img.off('drag');
+            }
+        };
+
+        // Remove all event listeners before destroying to prevent memory leaks
+        removeEvents(this.partImage);
+        removeEvents(this.motorBaseUnderImage);
+        removeEvents(this.motorBaseTileImage);
+        removeEvents(this.motorPawlClosedImage);
+        removeEvents(this.motorPawlOpenImage);
+        removeEvents(this.motorScrewImage);
+        removeEvents(this.motorDriveGearImage);
+        removeEvents(this.motorIntermediateGearImage);
+        removeEvents(this.motorSpannerImage);
+
+        // Destroy game objects
         this.partImage.destroy();
         this.motorBaseUnderImage.destroy();
         this.motorBaseTileImage.destroy();
@@ -360,7 +384,9 @@ export class MotorPart extends PartBase
         this.motorDriveGearImage.destroy();
         this.motorIntermediateGearImage.destroy();
         this.motorSpannerImage.destroy();
-        this.resetButton.destroy();
+        if (this.resetButton) this.resetButton.destroy();
+
+        // Destroy physics - joints first, then bodies
         this.world.destroyJoint(this.motorIntermediateGearGearJoint);
         this.world.destroyJoint(this.motorDriveGearGearJoint);
         this.world.destroyBody(this.motorWheelSprocketBody);
