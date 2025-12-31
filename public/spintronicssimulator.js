@@ -551,6 +551,32 @@ function create ()
     // Call the registration function
     registerKeyboardShortcuts();
 
+    // Register zoom keyboard shortcuts (Cmd/Ctrl + =/-/0)
+    document.addEventListener('keydown', (event) => {
+        // Check for Cmd (Mac) or Ctrl (Windows/Linux)
+        const isModifierPressed = event.metaKey || event.ctrlKey;
+
+        if (isModifierPressed) {
+            // Cmd/Ctrl + = or Cmd/Ctrl + + (zoom in)
+            if (event.key === '=' || event.key === '+') {
+                event.preventDefault();
+                zoomIn();
+                self.useZoomExtents = false;
+            }
+            // Cmd/Ctrl + - (zoom out)
+            else if (event.key === '-') {
+                event.preventDefault();
+                zoomOut();
+                self.useZoomExtents = false;
+            }
+            // Cmd/Ctrl + 0 (reset zoom)
+            else if (event.key === '0') {
+                event.preventDefault();
+                zoomReset();
+            }
+        }
+    });
+
     this.useZoomExtents = false;
     this.scale.on('resize', resize, this);
     //let worldCenter = this.cameras.main.getWorldPoint(this.cameras.main.centerX, this.cameras.main.centerY);
@@ -1338,15 +1364,33 @@ function onLoadClicked(name, newToggleState)
 
 function onPointerWheel(pointer, currentlyOver, deltaX, deltaY, deltaZ, event)
 {
-    /*if (deltaX > 0 || deltaY > 0 || deltaZ > 0)
-    {
-        zoomIn();
+    // Only process if there's actual vertical scroll (ignore tiny values from trackpad clicks)
+    if (Math.abs(deltaY) < 1) {
+        return;
     }
-    else if (deltaX < 0 || deltaY < 0 || deltaZ < 0)
-    {
+
+    // Get the world position of the pointer before zooming
+    let worldPointerBefore = self.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+    // Zoom in or out based on scroll direction
+    // deltaY > 0 means scrolling down (zoom out), deltaY < 0 means scrolling up (zoom in)
+    if (deltaY < 0) {
+        zoomIn();
+    } else if (deltaY > 0) {
         zoomOut();
-    }*/
-    //event.preventDefault();
+    }
+
+    // Get the world position of the pointer after zooming
+    let worldPointerAfter = self.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+    // Adjust camera position to keep the pointer at the same world position
+    let currentCenter = self.cameras.main.getWorldPoint(self.cameras.main.centerX, self.cameras.main.centerY);
+    let offsetX = worldPointerBefore.x - worldPointerAfter.x;
+    let offsetY = worldPointerBefore.y - worldPointerAfter.y;
+    self.cameras.main.centerOn(currentCenter.x + offsetX, currentCenter.y + offsetY);
+
+    // Stop resizing to the zoom extents
+    self.useZoomExtents = false;
 }
 
 function zoomIn()
@@ -1394,6 +1438,13 @@ function zoomOut()
     }
 
     self.cameras.main.centerOn(newCenterX, newCenterY);*/
+}
+
+function zoomReset()
+{
+    self.cameras.main.setZoom(1);
+    // Stop resizing to the zoom extents
+    self.useZoomExtents = false;
 }
 
 function onRemoveAllClicked(name, newToggleState)
