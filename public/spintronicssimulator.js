@@ -3,6 +3,7 @@ import { PartBase } from './parts/partbase.js';
 import { PartManager } from './part-manager.js';
 import { PopupLevelChooser } from './popup-level-chooser.js';
 import {tileSpacing} from './constants.js';
+import * as LocalStorage from './local-storage.js';
 
 let mapWidth = 10000;
 let mapHeight = 10000;
@@ -38,6 +39,8 @@ let config = {
     dom: {
         createContainer: true
     },
+    // Disable autoFocus to prevent canvas focus-related scrolling issues
+    autoFocus: false,
     parent: 'phaserparent',
     scene: {
         preload: preload,
@@ -339,6 +342,78 @@ function create ()
             this.viewOnly = true;
     }
 
+    // Prevent canvas focus-related scrolling in Firefox
+    // This fixes the "jumping canvas" issue when clicking to place components after using keyboard shortcuts
+    const canvas = this.sys.game.canvas;
+    const phaserParent = document.getElementById('phaserparent');
+
+    if (canvas) {
+        // Set tabindex to -1 to prevent keyboard navigation to canvas but allow click focus
+        canvas.setAttribute('tabindex', '-1');
+
+        // Prevent focus-triggered scrolling
+        canvas.style.outline = 'none';
+
+        // Override focus to use preventScroll option
+        const originalFocus = canvas.focus.bind(canvas);
+        canvas.focus = function(options) {
+            originalFocus({ preventScroll: true, ...options });
+        };
+
+        // Firefox-specific fix: Save and restore scroll positions around mousedown
+        // This prevents Firefox's automatic scroll-into-view behavior when clicking
+        const scene = this;
+        canvas.addEventListener('mousedown', (event) => {
+            // Save scroll positions
+            const savedScrollX = window.scrollX;
+            const savedScrollY = window.scrollY;
+            const savedParentScrollTop = phaserParent ? phaserParent.scrollTop : 0;
+            const savedParentScrollLeft = phaserParent ? phaserParent.scrollLeft : 0;
+
+            // Also save Phaser camera position
+            const savedCameraScrollX = scene.cameras.main.scrollX;
+            const savedCameraScrollY = scene.cameras.main.scrollY;
+
+            // Use requestAnimationFrame to restore after Firefox processes the click
+            requestAnimationFrame(() => {
+                // Restore window scroll if it changed
+                if (window.scrollX !== savedScrollX || window.scrollY !== savedScrollY) {
+                    window.scrollTo(savedScrollX, savedScrollY);
+                }
+                // Restore parent scroll if it changed
+                if (phaserParent) {
+                    if (phaserParent.scrollTop !== savedParentScrollTop) {
+                        phaserParent.scrollTop = savedParentScrollTop;
+                    }
+                    if (phaserParent.scrollLeft !== savedParentScrollLeft) {
+                        phaserParent.scrollLeft = savedParentScrollLeft;
+                    }
+                }
+                // Restore Phaser camera position if it changed unexpectedly
+                if (scene.cameras.main.scrollX !== savedCameraScrollX ||
+                    scene.cameras.main.scrollY !== savedCameraScrollY) {
+                    // Log this for debugging
+                    console.log('Camera position changed unexpectedly during click:', {
+                        before: { x: savedCameraScrollX, y: savedCameraScrollY },
+                        after: { x: scene.cameras.main.scrollX, y: scene.cameras.main.scrollY }
+                    });
+                    scene.cameras.main.scrollX = savedCameraScrollX;
+                    scene.cameras.main.scrollY = savedCameraScrollY;
+                }
+            });
+        }, { capture: true, passive: true });
+    }
+
+    // Also add CSS to prevent any scroll behavior on the phaserparent container
+    if (phaserParent) {
+        phaserParent.style.overflow = 'hidden';
+        phaserParent.style.position = 'fixed';
+    }
+
+    // Prevent any scroll behavior on html and body as well
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
     // Set up planck.js
 
     // World gravity, as a Vec2 object. It's just a x, y vector
@@ -469,8 +544,8 @@ function create ()
     this.zoominbutton.setTooltipString('Zoom in', 'left');
     this.zoomoutbutton = new ToggleButton(controlscene, 'zoom-out', rightSideToolbarPositionX, 35+5*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'zoom-out-icon', onZoomOutClicked, 'button-disabled-background');
     this.zoomoutbutton.setTooltipString('Zoom out', 'left');
-    this.linkbutton = new ToggleButton(controlscene, 'link', rightSideToolbarPositionX, 35+6*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'link-icon', onGenerateLinkClicked, 'button-disabled-background');
-    this.linkbutton.setTooltipString('Copy circuit to clipboard', 'left');
+    this.linkbutton = new ToggleButton(controlscene, 'link', rightSideToolbarPositionX, 35+6*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'link-icon', onMyCircuitsClicked, 'button-disabled-background');
+    this.linkbutton.setTooltipString('My Circuits', 'left');
     this.savebutton = new ToggleButton(controlscene, 'save', rightSideToolbarPositionX, 35+7*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'save-icon', onSaveClicked, 'button-disabled-background');
     this.savebutton.setTooltipString('Save circuit', 'left');
     this.loadbutton = new ToggleButton(controlscene, 'load', rightSideToolbarPositionX, 35+8*75, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'load-icon', onLoadClicked, 'button-disabled-background');
@@ -526,30 +601,40 @@ function create ()
 
     this.input.keyboard.on('keydown-ESC', (event) => escapeKeyDown.bind(this)(event))
 
-    // Register keyboard shortcuts for components and tools
-    function registerKeyboardShortcuts() {
-        for (const [key, componentName] of Object.entries(KEYBOARD_SHORTCUTS)) {
-            self.input.keyboard.on(`keydown-${key}`, (event) => {
-                // Don't trigger shortcuts if popup is open
-                if (popupLevelChooser != null) {
-                    return;
-                }
-
-                // Check if Shift key is pressed
-                const isShiftPressed = event.shiftKey;
-
-                // One-shot mode: place one component then return to interact
-                // Stencil mode (Shift+key): keep placing components
-                oneShotMode = !isShiftPressed;
-
-                // Trigger the component/tool selection
-                onSwitchToggled(componentName, true);
-            });
+    // Register keyboard shortcuts for components and tools using native DOM events
+    // This provides better control over event propagation than Phaser's keyboard system
+    document.addEventListener('keydown', (event) => {
+        // Don't capture shortcuts when Cmd/Ctrl is pressed (allow browser shortcuts like Cmd+R)
+        if (event.metaKey || event.ctrlKey) {
+            return;
         }
-    }
 
-    // Call the registration function
-    registerKeyboardShortcuts();
+        const key = event.key.toUpperCase();
+
+        // Check if this key is a registered shortcut
+        if (KEYBOARD_SHORTCUTS.hasOwnProperty(key)) {
+            // Prevent default browser behavior to avoid canvas jumping/scrolling
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Don't trigger shortcuts if popup is open
+            if (popupLevelChooser != null) {
+                return;
+            }
+
+            const componentName = KEYBOARD_SHORTCUTS[key];
+
+            // Check if Shift key is pressed
+            const isShiftPressed = event.shiftKey;
+
+            // One-shot mode: place one component then return to interact
+            // Stencil mode (Shift+key): keep placing components
+            oneShotMode = !isShiftPressed;
+
+            // Trigger the component/tool selection
+            onSwitchToggled(componentName, true);
+        }
+    });
 
     // Register zoom keyboard shortcuts (Cmd/Ctrl + =/-/0)
     document.addEventListener('keydown', (event) => {
@@ -680,24 +765,42 @@ function update ()
 */
 }
 
-var mapDragging = true;
+var mapDragging = false;
 var startingDragCenter = {x: 0, y: 0};
 var startingPointer = {x: 0, y: 0};
+var dragStartedInDragMode = false; // Track if drag was started when in a valid drag mode
+
 function onDragStart(pointer, dragX, dragY)
 {
-    if (self.interactbutton.getToggleState() || partManager.toolMode == 'move' || self.chainbutton.getToggleState() || self.deletebutton.getToggleState() || self.editbutton.getToggleState()) {
+    // Check if we're in a mode that allows dragging AT THE START of the drag
+    const canDrag = self.interactbutton.getToggleState() || partManager.toolMode == 'move' || self.chainbutton.getToggleState() || self.deletebutton.getToggleState() || self.editbutton.getToggleState();
+
+    if (canDrag) {
         startingDragCenter = self.cameras.main.getWorldPoint(self.cameras.main.centerX, self.cameras.main.centerY);
         startingPointer.x = pointer.x;
         startingPointer.y = pointer.y;
         mapDragging = true;
+        dragStartedInDragMode = true; // Mark that drag started in a valid mode
 
         // Stop resizing window to the zoom extents.
         self.useZoomExtents = false;
+    } else {
+        // Drag started while placing a component - don't allow dragging
+        dragStartedInDragMode = false;
+        mapDragging = false;
     }
 }
 
 function onDrag(pointer, dragX, dragY)
 {
+    // Only allow dragging if:
+    // 1. The drag was started in a valid drag mode (dragStartedInDragMode)
+    // 2. We're still in a valid drag mode
+    // This prevents the mode change during checkOneShotMode() from triggering unwanted camera movement
+    if (!dragStartedInDragMode) {
+        return; // Ignore drag events if drag didn't start in a valid mode
+    }
+
     if (self.interactbutton.getToggleState() || partManager.toolMode == 'move' || self.chainbutton.getToggleState() || self.deletebutton.getToggleState() || self.editbutton.getToggleState()) {
         let desiredCenterPosition = {x: 0, y: 0};
         desiredCenterPosition.x = startingDragCenter.x - (pointer.x - startingPointer.x) / self.cameras.main.zoom;
@@ -708,6 +811,9 @@ function onDrag(pointer, dragX, dragY)
 
 function onDragEnd(pointer, dragX, dragY)
 {
+    // Always reset the drag tracking flag on drag end
+    dragStartedInDragMode = false;
+
     if (self.interactbutton.getToggleState() || partManager.toolMode == 'move' || self.chainbutton.getToggleState() || self.deletebutton.getToggleState() || self.editbutton.getToggleState()) {
         mapDragging = false;
         self.input.setDefaultCursor('default');
@@ -739,11 +845,58 @@ async function loadCircuitFromDatabase (linkID)
                 //console.log(JSON.parse(result['circuitJSON']));
                 loadJSONCircuit(JSON.parse(result['circuitJSON']['circuitJSON']));
             }
+            else {
+                showLinkErrorMessage();
+            }
         }
         else {
-            // TODO: Handle this error.
+            showLinkErrorMessage();
         }
     }
+    else {
+        // Server not available - show friendly error
+        showLinkErrorMessage();
+    }
+}
+
+function showLinkErrorMessage() {
+    // Show a user-friendly message when shared link can't be loaded
+    let graybackground = controlscene.add.dom().createElement('div', 'background-color: rgba(0, 0, 0, 0.2); position: absolute; left: ' + controlscene.cameras.main.width / 2 + 'px; top: ' + controlscene.cameras.main.height / 2 + 'px; width: ' + controlscene.cameras.main.width + 'px; height: ' + controlscene.cameras.main.height + 'px', '');
+
+    let form = `
+        <div style="font-family: 'Roboto'; font-size: 16px; position: absolute; transform: translate(-50%, -50%); box-sizing: border-box; background-color: rgba(255, 255, 255, 1); border-color: black; border-width: 1px; border-style: solid; border-radius: 10px; width: 350px; padding: 15px;" >
+            <p style="margin-top: 0px; margin-bottom: 10px; font-family: 'Roboto'; font-size: 18px;"><b>Unable to Load Shared Circuit</b></p>
+            <p style="margin: 10px 0; color: #666;">This shared circuit link requires the online server which is not available.</p>
+            <p style="margin: 10px 0; color: #666;">You can still:</p>
+            <ul style="margin: 10px 0; color: #666; padding-left: 20px;">
+                <li>Create new circuits</li>
+                <li>Save circuits locally via "My Circuits"</li>
+                <li>Export/import .spin files</li>
+            </ul>
+            <div style="width: 100%; text-align: right; margin-top: 15px;">
+                <button name="okBtn" style="padding: 8px 16px; cursor: pointer;">OK</button>
+            </div>
+        </div>
+    `;
+
+    let element = controlscene.add.dom().createFromHTML(form);
+    element.setPosition(controlscene.cameras.main.width / 2, controlscene.cameras.main.height / 2);
+
+    element.addListener('click');
+    element.on('click', (event) => {
+        if (event.target.name === 'okBtn') {
+            element.destroy();
+            graybackground.destroy();
+        }
+        event.stopPropagation();
+    });
+
+    graybackground.addListener('click');
+    graybackground.on('click', (event) => {
+        element.destroy();
+        graybackground.destroy();
+    });
+    graybackground.setInteractive();
 }
 
 async function fetchCircuit(code, linkID)
@@ -820,6 +973,119 @@ async function getCircuit(code, linkID)
 
             return {status: 'failed'};
         });
+}
+
+function onMyCircuitsClicked(name, newToggleState)
+{
+    // Show the "My Circuits" dialog for managing locally saved circuits
+    const savedCircuits = LocalStorage.getCircuitList();
+
+    let circuitListHTML = '';
+    if (savedCircuits.length === 0) {
+        circuitListHTML = '<p style="color: #666; font-style: italic; margin: 10px 0;">No saved circuits yet</p>';
+    } else {
+        circuitListHTML = '<div style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; margin: 10px 0;">';
+        savedCircuits.forEach((circuit, index) => {
+            const date = new Date(circuit.savedAt).toLocaleDateString();
+            circuitListHTML += `
+                <div class="circuit-item" data-name="${circuit.name}" style="padding: 8px 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onmouseover="this.style.backgroundColor='#f0f0f0'" onmouseout="this.style.backgroundColor='white'">
+                    <span style="flex: 1;">${circuit.name}</span>
+                    <span style="color: #888; font-size: 12px; margin-right: 10px;">${date}</span>
+                    <button class="load-btn" data-name="${circuit.name}" style="margin-right: 5px; padding: 3px 8px; cursor: pointer;">Load</button>
+                    <button class="delete-btn" data-name="${circuit.name}" style="padding: 3px 8px; cursor: pointer; color: #c00;">Delete</button>
+                </div>
+            `;
+        });
+        circuitListHTML += '</div>';
+    }
+
+    let graybackground = controlscene.add.dom().createElement('div', 'background-color: rgba(0, 0, 0, 0.2); position: absolute; left: ' + controlscene.cameras.main.width / 2 + 'px; top: ' + controlscene.cameras.main.height / 2 + 'px; width: ' + controlscene.cameras.main.width + 'px; height: ' + controlscene.cameras.main.height + 'px', '');
+
+    let form = `
+        <div style="font-family: 'Roboto'; font-size: 16px; position: absolute; transform: translate(-50%, -50%); box-sizing: border-box; background-color: rgba(255, 255, 255, 1); border-color: black; border-width: 1px; border-style: solid; border-radius: 10px; width: 400px; padding: 15px;" >
+            <p style="margin-top: 0px; margin-bottom: 15px; font-family: 'Roboto'; font-size: 18px;"><b>My Circuits</b></p>
+
+            <div style="margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+                <p style="margin: 0 0 8px 0; font-size: 14px;"><b>Save Current Circuit:</b></p>
+                <div style="display: flex; gap: 8px;">
+                    <input style="flex: 1; padding: 6px; font-family: 'Roboto'; font-size: 14px; border: 1px solid #ccc; border-radius: 4px;" type="text" name="circuitName" placeholder="Enter circuit name...">
+                    <button name="saveBtn" style="padding: 6px 12px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px;">Save</button>
+                </div>
+            </div>
+
+            <p style="margin: 0 0 8px 0; font-size: 14px;"><b>Saved Circuits:</b></p>
+            ${circuitListHTML}
+
+            <div style="width: 100%; text-align: right; margin-top: 15px;">
+                <button name="closeBtn" style="padding: 8px 16px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    `;
+
+    let element = controlscene.add.dom().createFromHTML(form);
+    element.setPosition(controlscene.cameras.main.width / 2, controlscene.cameras.main.height / 2);
+
+    element.addListener('click');
+    element.on('click', (event) => {
+        event.stopPropagation();
+
+        if (event.target.name === 'closeBtn') {
+            element.destroy();
+            graybackground.destroy();
+        }
+        else if (event.target.name === 'saveBtn') {
+            const nameInput = element.getChildByName('circuitName');
+            const circuitName = nameInput.value.trim();
+            if (circuitName) {
+                const jsonData = createCircuitJSON();
+                if (LocalStorage.saveCircuit(circuitName, jsonData)) {
+                    // Refresh the dialog
+                    element.destroy();
+                    graybackground.destroy();
+                    onMyCircuitsClicked(name, newToggleState);
+                } else {
+                    alert('Failed to save circuit. Storage may be full.');
+                }
+            } else {
+                alert('Please enter a name for your circuit.');
+            }
+        }
+        else if (event.target.classList.contains('load-btn')) {
+            const circuitName = event.target.getAttribute('data-name');
+            const circuitData = LocalStorage.loadCircuit(circuitName);
+            if (circuitData) {
+                try {
+                    const jsonCircuit = JSON.parse(circuitData);
+                    loadJSONCircuit(jsonCircuit);
+                    element.destroy();
+                    graybackground.destroy();
+                } catch (e) {
+                    alert('Failed to load circuit: Invalid data');
+                }
+            }
+        }
+        else if (event.target.classList.contains('delete-btn')) {
+            const circuitName = event.target.getAttribute('data-name');
+            if (confirm(`Delete "${circuitName}"?`)) {
+                LocalStorage.deleteCircuit(circuitName);
+                // Refresh the dialog
+                element.destroy();
+                graybackground.destroy();
+                onMyCircuitsClicked(name, newToggleState);
+            }
+        }
+    });
+
+    // Close on background click
+    graybackground.addListener('click');
+    graybackground.on('click', (event) => {
+        element.destroy();
+        graybackground.destroy();
+    });
+    graybackground.setInteractive();
+    graybackground.on('pointerdown', (pointer, localx, localy, event) => {
+        event.stopPropagation();
+    });
 }
 
 async function onGenerateLinkClicked (name, newToggleState)
@@ -2145,6 +2411,11 @@ function drawBackgroundGridOld ()
 
 function escapeKeyDown(event)
 {
+    // Prevent default browser behavior to avoid canvas jumping
+    if (event.originalEvent) {
+        event.originalEvent.preventDefault();
+    }
+
     if (partManager.isInTheMiddleOfBuildingAChain())
     {
         partManager.cancelChain();
@@ -2163,9 +2434,14 @@ function escapeKeyDown(event)
 
 function getZoomExtents ()
 {
-    let zoomExtents = {left: 0, right: 0, top: 0, bottom: 0};
-    if (partManager != null) {
-        for (let i = 0; i < partManager.parts.length; i++) {
+    // Initialize with null to properly track if we've seen any parts
+    let zoomExtents = null;
+
+    if (partManager != null && partManager.parts.length > 0) {
+        // Initialize with the first part's extents instead of origin
+        zoomExtents = { ...partManager.parts[0].getPartExtents() };
+
+        for (let i = 1; i < partManager.parts.length; i++) {
             let partExtents = partManager.parts[i].getPartExtents();
             if (partExtents.left < zoomExtents.left)
                 zoomExtents.left = partExtents.left;
@@ -2177,14 +2453,33 @@ function getZoomExtents ()
                 zoomExtents.bottom = partExtents.bottom;
         }
     }
-    return zoomExtents;
+
+    // Return default centered at origin only if no parts exist
+    return zoomExtents || {left: 0, right: 0, top: 0, bottom: 0};
 }
 
 //function resize (gameSize, baseSize, displaySize, resolution)
 function resize (gameSize, baseSize, displaySize, previousWidth, previousHeight)
 {
+    // Always reposition UI buttons on resize
     positionLeftSideButtons.bind(this)();
     positionRightSideButtons.bind(this)();
+
+    // Guard against invalid previousWidth/previousHeight values
+    // These can be undefined on certain resize events, causing NaN calculations
+    const validPreviousSize = typeof previousWidth === 'number' && typeof previousHeight === 'number'
+        && previousWidth > 0 && previousHeight > 0
+        && !isNaN(previousWidth) && !isNaN(previousHeight);
+
+    // Skip camera adjustments if previous size is invalid (would cause NaN)
+    if (!validPreviousSize) {
+        return;
+    }
+
+    // Skip if size hasn't actually changed
+    if (gameSize.width === previousWidth && gameSize.height === previousHeight) {
+        return;
+    }
 
     // this.sceneDimensions has the last dimensions of the view before the resize.
 
