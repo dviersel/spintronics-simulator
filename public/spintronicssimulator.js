@@ -4,6 +4,7 @@ import { PartManager } from './part-manager.js';
 import { PopupLevelChooser } from './popup-level-chooser.js';
 import {tileSpacing} from './constants.js';
 import * as LocalStorage from './local-storage.js';
+import { i18n } from './i18n.js';
 
 let mapWidth = 10000;
 let mapHeight = 10000;
@@ -692,12 +693,166 @@ function create ()
     // Set the Interact button to ON so you can mess with the parts.
     onSwitchToggled('interact', true);
 
+    // Initialize internationalization and language selector
+    initializeI18n.bind(this)();
+
     this.linkID = null;
     if (urlParams.has('linkID')) {
         this.linkID = urlParams.get('linkID');
         loadCircuitFromDatabase(this.linkID);
     }
 
+}
+
+/**
+ * Initialize the internationalization system and create language selector
+ */
+async function initializeI18n()
+{
+    const scene = this;
+
+    // Initialize i18n (loads saved language or detects from browser)
+    await i18n.init();
+
+    // Update all button tooltips with translations
+    updateButtonTooltips.bind(scene)();
+
+    // Create language selector dropdown
+    createLanguageSelector();
+
+    // Register for language changes to update tooltips
+    i18n.onLanguageChange(() => {
+        updateButtonTooltips.bind(scene)();
+    });
+}
+
+/**
+ * Update all toolbar button tooltips with translated content
+ */
+function updateButtonTooltips()
+{
+    // Component buttons (left toolbar)
+    const componentButtons = {
+        'chain': this.chainbutton,
+        'junction': this.junctionbutton,
+        'motor': this.motorbutton,
+        'resistor': this.resistorbutton,
+        'capacitor': this.capacitorbutton,
+        'inductor': this.inductorbutton,
+        'phonograph': this.phonographbutton,
+        'diode': this.diodebutton,
+        'button': this.buttonbutton,
+        'transistor': this.transistorbutton,
+        'level-changer': this.levelchangerbutton,
+        'tile': this.tilebutton
+    };
+
+    // Update component button tooltips
+    for (const [componentId, button] of Object.entries(componentButtons)) {
+        if (button) {
+            const info = i18n.getComponentInfo(componentId);
+            button.setRichTooltip({
+                name: info.name,
+                shortcut: info.shortcut,
+                description: info.description,
+                equivalent: info.equivalent
+            }, 'right');
+        }
+    }
+
+    // Tool buttons (right toolbar)
+    const toolButtons = {
+        'interact': this.interactbutton,
+        'move': this.movebutton,
+        'delete': this.deletebutton,
+        'edit': this.editbutton
+    };
+
+    // Update tool button tooltips
+    for (const [toolId, button] of Object.entries(toolButtons)) {
+        if (button) {
+            const info = i18n.getToolInfo(toolId);
+            button.setRichTooltip({
+                name: info.name,
+                shortcut: info.shortcut,
+                description: info.description,
+                equivalent: ''
+            }, 'left');
+        }
+    }
+
+    // Update simple tooltips for utility buttons (no rich descriptions)
+    if (this.removeallbutton) this.removeallbutton.setTooltipString(i18n.t('ui.remove_all', 'Remove All'), 'left');
+    if (this.zoominbutton) this.zoominbutton.setTooltipString(i18n.t('ui.zoom_in', 'Zoom In'), 'left');
+    if (this.zoomoutbutton) this.zoomoutbutton.setTooltipString(i18n.t('ui.zoom_out', 'Zoom Out'), 'left');
+    if (this.linkbutton) this.linkbutton.setTooltipString(i18n.t('ui.my_circuits', 'My Circuits'), 'left');
+    if (this.savebutton) this.savebutton.setTooltipString(i18n.t('ui.save_circuit', 'Save Circuit'), 'left');
+    if (this.loadbutton) this.loadbutton.setTooltipString(i18n.t('ui.load_circuit', 'Load Circuit'), 'left');
+    if (this.fullscreenbutton) this.fullscreenbutton.setTooltipString(i18n.t('ui.fullscreen', 'Open in Full Simulator'), 'left');
+}
+
+/**
+ * Create the language selector dropdown in the UI
+ */
+function createLanguageSelector()
+{
+    // Remove existing selector if present
+    const existing = document.getElementById('language-selector-container');
+    if (existing) existing.remove();
+
+    // Create container
+    const container = document.createElement('div');
+    container.id = 'language-selector-container';
+    container.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        font-family: Roboto, sans-serif;
+    `;
+
+    // Create select dropdown
+    const select = document.createElement('select');
+    select.id = 'language-selector';
+    select.style.cssText = `
+        padding: 6px 12px;
+        font-size: 14px;
+        font-family: Roboto, sans-serif;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        outline: none;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    `;
+
+    // Add hover effect
+    select.addEventListener('mouseenter', () => select.style.opacity = '1');
+    select.addEventListener('mouseleave', () => select.style.opacity = '0.7');
+
+    // Populate options
+    const languages = i18n.getAvailableLanguages();
+    const currentLang = i18n.getCurrentLanguage();
+
+    for (const lang of languages) {
+        const option = document.createElement('option');
+        option.value = lang.code;
+        option.textContent = lang.name;
+        if (lang.code === currentLang) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    }
+
+    // Handle language change
+    select.addEventListener('change', async (e) => {
+        await i18n.loadLanguage(e.target.value);
+    });
+
+    container.appendChild(select);
+    document.body.appendChild(container);
 }
 
 function onFullEditorClicked (name, newToggleState)
