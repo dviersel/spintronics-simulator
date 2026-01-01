@@ -4,13 +4,13 @@ A free, online simulator for Spintronics circuits - mechanical analogues of elec
 
 ## Try It Online
 
-**[Launch Simulator](https://upperstory.github.io/spintronics-simulator/)** - No installation required!
+**[Launch Simulator](https://dviersel.github.io/spintronics-simulator/)** - No installation required!
 
 ## Installation
 
 ### Option 1: Download and Run Locally
 
-1. Go to the [Releases](https://github.com/upperstory/spintronics-simulator/releases) page
+1. Go to the [Releases](https://github.com/dviersel/spintronics-simulator/releases) page
 2. Download the latest `spintronics-simulator-vX.X.X.zip`
 3. Extract the zip file
 4. Open `index.html` in your browser
@@ -38,7 +38,7 @@ Then open http://localhost:8000 in your browser.
 
 ```bash
 # Clone the repository
-git clone https://github.com/upperstory/spintronics-simulator.git
+git clone https://github.com/dviersel/spintronics-simulator.git
 cd spintronics-simulator
 
 # Install dependencies
@@ -62,7 +62,9 @@ npm run serve:static
   - Motors
   - Buttons
   - Diodes
-  - And more!
+  - Ammeters (gauge-style current meters)
+  - Phonographs (audio output)
+  - Level Changers
 - Real-time physics simulation using Planck.js
 - Save and share circuits (requires server setup)
 - Zoom and pan controls
