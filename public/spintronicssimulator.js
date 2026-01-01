@@ -1905,8 +1905,17 @@ function onZoomOutClicked(name, newToggleState)
 
 
 var objects = {};
+// List of component names (not tools) for one-shot mode
+const COMPONENT_NAMES = ['chain', 'junction', 'motor', 'resistor', 'capacitor', 'inductor', 'phonograph', 'ammeter', 'diode', 'button', 'transistor', 'level-changer', 'tile'];
+
 function onSwitchToggled (name, newToggleState)
 {
+    // Enable one-shot mode when selecting a component (not a tool like interact/move/delete/edit)
+    // This ensures placing one component returns to interact mode, whether triggered by keyboard or mouse
+    if (COMPONENT_NAMES.includes(name)) {
+        oneShotMode = true;
+    }
+
     self.chainbutton.setToggleState(false);
     self.junctionbutton.setToggleState(false);
     self.motorbutton.setToggleState(false);
