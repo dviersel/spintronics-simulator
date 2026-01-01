@@ -110,6 +110,7 @@ const KEYBOARD_SHORTCUTS = {
     'C': 'capacitor',
     'I': 'inductor',
     'P': 'phonograph',
+    'A': 'ammeter',
     'D': 'diode',
     'U': 'button',
     'T': 'transistor',
@@ -1913,6 +1914,7 @@ function onSwitchToggled (name, newToggleState)
     self.capacitorbutton.setToggleState(false);
     self.inductorbutton.setToggleState(false);
     self.phonographbutton.setToggleState(false);
+    self.ammeterbutton.setToggleState(false);
     self.diodebutton.setToggleState(false);
     self.buttonbutton.setToggleState(false);
     self.transistorbutton.setToggleState(false);
@@ -1969,6 +1971,13 @@ function onSwitchToggled (name, newToggleState)
     {
         self.phonographbutton.setToggleState(true);
         mouseImage.setTexture('phonograph');
+        mouseImageOffset = PartBase.getPartImageOffsets(name);
+        mouseImage.setVisible(true);
+    }
+    else if (name == 'ammeter')
+    {
+        self.ammeterbutton.setToggleState(true);
+        mouseImage.setTexture('ammeter-icon');
         mouseImageOffset = PartBase.getPartImageOffsets(name);
         mouseImage.setVisible(true);
     }
