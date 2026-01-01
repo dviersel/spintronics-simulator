@@ -77,3 +77,4 @@ temp/
 
 # Heroku
 .heroku/
+.playwright-mcp/

@@ -113,7 +113,7 @@ function generateDial() {
 
     ctx.clearRect(0, 0, SIZE, SIZE);
 
-    const dialRadius = 50;
+    const dialRadius = 85; // Increased to fill the component area properly
 
     ctx.save();
     ctx.translate(CENTER, CENTER);
@@ -130,7 +130,7 @@ function generateDial() {
     ctx.fill();
 
     // Draw scale arc (semi-circle at top)
-    const scaleRadius = 38;
+    const scaleRadius = 65; // Increased proportionally with dial
     const startAngle = -Math.PI * 0.75; // -135 degrees
     const endAngle = -Math.PI * 0.25;   // -45 degrees
 
@@ -141,7 +141,7 @@ function generateDial() {
     const majorTicks = 5; // -max, -half, 0, +half, +max
     for (let i = 0; i < majorTicks; i++) {
         const tickAngle = startAngle + (i / (majorTicks - 1)) * (endAngle - startAngle);
-        const innerR = scaleRadius - 8;
+        const innerR = scaleRadius - 12;
         const outerR = scaleRadius;
 
         ctx.beginPath();
@@ -156,7 +156,7 @@ function generateDial() {
     for (let i = 0; i < minorTicks; i++) {
         if (i % 5 === 0) continue; // Skip major tick positions
         const tickAngle = startAngle + (i / (minorTicks - 1)) * (endAngle - startAngle);
-        const innerR = scaleRadius - 4;
+        const innerR = scaleRadius - 6;
         const outerR = scaleRadius;
 
         ctx.beginPath();
@@ -167,12 +167,12 @@ function generateDial() {
 
     // Scale labels
     ctx.fillStyle = COLORS.darkBrown;
-    ctx.font = 'bold 9px serif';
+    ctx.font = 'bold 14px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     const labels = ['-', '', '0', '', '+'];
-    const labelRadius = scaleRadius - 16;
+    const labelRadius = scaleRadius - 22;
     for (let i = 0; i < labels.length; i++) {
         const labelAngle = startAngle + (i / (labels.length - 1)) * (endAngle - startAngle);
         const x = Math.cos(labelAngle) * labelRadius;
@@ -181,16 +181,16 @@ function generateDial() {
     }
 
     // "mA" label at bottom of dial
-    ctx.font = 'bold 10px serif';
-    ctx.fillText('mA', 0, 8);
+    ctx.font = 'bold 14px serif';
+    ctx.fillText('mA', 0, 15);
 
     // Decorative center ring (where needle pivots)
     ctx.beginPath();
-    ctx.arc(0, 20, 6, 0, Math.PI * 2);
+    ctx.arc(0, 35, 10, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.brassDark;
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(0, 20, 4, 0, Math.PI * 2);
+    ctx.arc(0, 35, 7, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.brass;
     ctx.fill();
 
@@ -208,8 +208,8 @@ function generateBezel() {
 
     ctx.clearRect(0, 0, SIZE, SIZE);
 
-    const outerRadius = 56;
-    const innerRadius = 51;
+    const outerRadius = 95;
+    const innerRadius = 86;
 
     ctx.save();
     ctx.translate(CENTER, CENTER);
@@ -251,21 +251,21 @@ function generateBezel() {
     ];
 
     for (const screw of screwPositions) {
-        const x = Math.cos(screw.angle) * (outerRadius - 3);
-        const y = Math.sin(screw.angle) * (outerRadius - 3);
+        const x = Math.cos(screw.angle) * (outerRadius - 5);
+        const y = Math.sin(screw.angle) * (outerRadius - 5);
 
         // Screw head
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
         ctx.fillStyle = COLORS.brassDark;
         ctx.fill();
 
         // Screw slot
         ctx.beginPath();
-        ctx.moveTo(x - 2, y);
-        ctx.lineTo(x + 2, y);
+        ctx.moveTo(x - 3, y);
+        ctx.lineTo(x + 3, y);
         ctx.strokeStyle = COLORS.darkBrown;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
     }
 
@@ -288,18 +288,18 @@ function generateNeedle() {
 
     // Needle pointing up (will be rotated in-game)
     // The origin is set to (0.5, 0.85) in code, so we draw relative to that
-    const needleLength = 42;
-    const pivotY = 20; // Match dial center ring position
+    const needleLength = 70; // Increased for larger dial
+    const pivotY = 35; // Match dial center ring position
 
     // Draw needle shadow first
     ctx.save();
     ctx.translate(2, 2);
     ctx.beginPath();
     ctx.moveTo(0, pivotY - needleLength); // Tip
-    ctx.lineTo(-3, pivotY - 5);
-    ctx.lineTo(-2, pivotY + 5);
-    ctx.lineTo(2, pivotY + 5);
-    ctx.lineTo(3, pivotY - 5);
+    ctx.lineTo(-4, pivotY - 8);
+    ctx.lineTo(-3, pivotY + 8);
+    ctx.lineTo(3, pivotY + 8);
+    ctx.lineTo(4, pivotY - 8);
     ctx.closePath();
     ctx.fillStyle = COLORS.shadow;
     ctx.fill();
@@ -308,13 +308,13 @@ function generateNeedle() {
     // Needle body
     ctx.beginPath();
     ctx.moveTo(0, pivotY - needleLength); // Tip (pointing up)
-    ctx.lineTo(-2.5, pivotY - 5);
-    ctx.lineTo(-1.5, pivotY + 4);
-    ctx.lineTo(1.5, pivotY + 4);
-    ctx.lineTo(2.5, pivotY - 5);
+    ctx.lineTo(-3.5, pivotY - 8);
+    ctx.lineTo(-2.5, pivotY + 6);
+    ctx.lineTo(2.5, pivotY + 6);
+    ctx.lineTo(3.5, pivotY - 8);
     ctx.closePath();
 
-    const needleGradient = ctx.createLinearGradient(-3, 0, 3, 0);
+    const needleGradient = ctx.createLinearGradient(-4, 0, 4, 0);
     needleGradient.addColorStop(0, '#4a0000');
     needleGradient.addColorStop(0.5, COLORS.needleRed);
     needleGradient.addColorStop(1, '#4a0000');
@@ -323,11 +323,11 @@ function generateNeedle() {
 
     // Needle center cap
     ctx.beginPath();
-    ctx.arc(0, pivotY, 4, 0, Math.PI * 2);
+    ctx.arc(0, pivotY, 7, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.darkBrown;
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(0, pivotY, 2.5, 0, Math.PI * 2);
+    ctx.arc(0, pivotY, 4.5, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.brass;
     ctx.fill();
 
