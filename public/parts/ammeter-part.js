@@ -45,18 +45,18 @@ export class AmmeterPart extends PartBase {
         this.needleImage.setDepth(13);
         this.needleImage.setOrigin(0.5, 0.677); // Pivot at center ring: (CENTER + pivotY) / SIZE = (150 + 53) / 300 = 0.677
 
-        // Create scale label text
-        this.scaleText = scene.add.text(x, y + 60, AmmeterPart.scaleLabels[this.scaleIndex], {
-            font: '16px Roboto',
+        // Create scale label text (positioned inside dial, in lower portion)
+        this.scaleText = scene.add.text(x, y + 22, AmmeterPart.scaleLabels[this.scaleIndex], {
+            font: '11px Roboto',
             color: '#4a3728',
             fontStyle: 'bold'
         });
         this.scaleText.setOrigin(0.5, 0.5);
         this.scaleText.setDepth(15);
 
-        // Create current reading text
-        this.currentText = scene.add.text(x, y + 78, '0.0 mA', {
-            font: '14px Roboto',
+        // Create current reading text (positioned inside dial, below scale label)
+        this.currentText = scene.add.text(x, y + 36, '0.0 mA', {
+            font: '10px Roboto',
             color: '#2a1f18',
         });
         this.currentText.setOrigin(0.5, 0.5);
@@ -206,8 +206,8 @@ export class AmmeterPart extends PartBase {
         if (this.dialImage) this.dialImage.setPosition(x, y);
         if (this.bezelImage) this.bezelImage.setPosition(x, y);
         if (this.needleImage) this.needleImage.setPosition(x, y);
-        if (this.scaleText) this.scaleText.setPosition(x, y + 60);
-        if (this.currentText) this.currentText.setPosition(x, y + 78);
+        if (this.scaleText) this.scaleText.setPosition(x, y + 22);
+        if (this.currentText) this.currentText.setPosition(x, y + 36);
     }
 
     destroy() {
@@ -228,7 +228,7 @@ export class AmmeterPart extends PartBase {
             left: this.x - radius,
             right: this.x + radius,
             top: this.y - radius,
-            bottom: this.y + radius + 50 // Extra for text
+            bottom: this.y + radius // Text is now inside the dial
         };
     }
 }
