@@ -43,11 +43,11 @@ export class AmmeterPart extends PartBase {
         this.needleImage = scene.add.image(x, y, 'ammeter-needle');
         this.needleImage.setScale(0.5);
         this.needleImage.setDepth(13);
-        this.needleImage.setOrigin(0.5, 0.65); // Pivot at center ring position (35/117 from center)
+        this.needleImage.setOrigin(0.5, 0.677); // Pivot at center ring: (CENTER + pivotY) / SIZE = (150 + 53) / 300 = 0.677
 
         // Create scale label text
-        this.scaleText = scene.add.text(x, y + 40, AmmeterPart.scaleLabels[this.scaleIndex], {
-            font: '14px Roboto',
+        this.scaleText = scene.add.text(x, y + 60, AmmeterPart.scaleLabels[this.scaleIndex], {
+            font: '16px Roboto',
             color: '#4a3728',
             fontStyle: 'bold'
         });
@@ -55,8 +55,8 @@ export class AmmeterPart extends PartBase {
         this.scaleText.setDepth(15);
 
         // Create current reading text
-        this.currentText = scene.add.text(x, y + 55, '0.0 mA', {
-            font: '12px Roboto',
+        this.currentText = scene.add.text(x, y + 78, '0.0 mA', {
+            font: '14px Roboto',
             color: '#2a1f18',
         });
         this.currentText.setOrigin(0.5, 0.5);
@@ -206,8 +206,8 @@ export class AmmeterPart extends PartBase {
         if (this.dialImage) this.dialImage.setPosition(x, y);
         if (this.bezelImage) this.bezelImage.setPosition(x, y);
         if (this.needleImage) this.needleImage.setPosition(x, y);
-        if (this.scaleText) this.scaleText.setPosition(x, y + 40);
-        if (this.currentText) this.currentText.setPosition(x, y + 55);
+        if (this.scaleText) this.scaleText.setPosition(x, y + 60);
+        if (this.currentText) this.currentText.setPosition(x, y + 78);
     }
 
     destroy() {

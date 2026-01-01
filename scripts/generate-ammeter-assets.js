@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 const OUTPUT_DIR = path.join(__dirname, '../public/images');
-const SIZE = 234; // Match other component sizes (117 * 2 for 0.5 scale)
+const SIZE = 300; // Larger canvas for bigger dial (150 * 2 for 0.5 scale)
 const CENTER = SIZE / 2;
 
 // Steampunk color palette
@@ -113,7 +113,7 @@ function generateDial() {
 
     ctx.clearRect(0, 0, SIZE, SIZE);
 
-    const dialRadius = 85; // Increased to fill the component area properly
+    const dialRadius = 128; // 50% larger so chain runs behind dial
 
     ctx.save();
     ctx.translate(CENTER, CENTER);
@@ -130,7 +130,7 @@ function generateDial() {
     ctx.fill();
 
     // Draw scale arc (semi-circle at top)
-    const scaleRadius = 65; // Increased proportionally with dial
+    const scaleRadius = 98; // 50% larger
     const startAngle = -Math.PI * 0.75; // -135 degrees
     const endAngle = -Math.PI * 0.25;   // -45 degrees
 
@@ -141,7 +141,7 @@ function generateDial() {
     const majorTicks = 5; // -max, -half, 0, +half, +max
     for (let i = 0; i < majorTicks; i++) {
         const tickAngle = startAngle + (i / (majorTicks - 1)) * (endAngle - startAngle);
-        const innerR = scaleRadius - 12;
+        const innerR = scaleRadius - 18;
         const outerR = scaleRadius;
 
         ctx.beginPath();
@@ -156,7 +156,7 @@ function generateDial() {
     for (let i = 0; i < minorTicks; i++) {
         if (i % 5 === 0) continue; // Skip major tick positions
         const tickAngle = startAngle + (i / (minorTicks - 1)) * (endAngle - startAngle);
-        const innerR = scaleRadius - 6;
+        const innerR = scaleRadius - 9;
         const outerR = scaleRadius;
 
         ctx.beginPath();
@@ -167,12 +167,12 @@ function generateDial() {
 
     // Scale labels
     ctx.fillStyle = COLORS.darkBrown;
-    ctx.font = 'bold 14px serif';
+    ctx.font = 'bold 18px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     const labels = ['-', '', '0', '', '+'];
-    const labelRadius = scaleRadius - 22;
+    const labelRadius = scaleRadius - 33;
     for (let i = 0; i < labels.length; i++) {
         const labelAngle = startAngle + (i / (labels.length - 1)) * (endAngle - startAngle);
         const x = Math.cos(labelAngle) * labelRadius;
@@ -181,16 +181,16 @@ function generateDial() {
     }
 
     // "mA" label at bottom of dial
-    ctx.font = 'bold 14px serif';
-    ctx.fillText('mA', 0, 15);
+    ctx.font = 'bold 18px serif';
+    ctx.fillText('mA', 0, 22);
 
     // Decorative center ring (where needle pivots)
     ctx.beginPath();
-    ctx.arc(0, 35, 10, 0, Math.PI * 2);
+    ctx.arc(0, 53, 15, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.brassDark;
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(0, 35, 7, 0, Math.PI * 2);
+    ctx.arc(0, 53, 10, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.brass;
     ctx.fill();
 
@@ -208,8 +208,8 @@ function generateBezel() {
 
     ctx.clearRect(0, 0, SIZE, SIZE);
 
-    const outerRadius = 95;
-    const innerRadius = 86;
+    const outerRadius = 143;
+    const innerRadius = 129;
 
     ctx.save();
     ctx.translate(CENTER, CENTER);
@@ -251,21 +251,21 @@ function generateBezel() {
     ];
 
     for (const screw of screwPositions) {
-        const x = Math.cos(screw.angle) * (outerRadius - 5);
-        const y = Math.sin(screw.angle) * (outerRadius - 5);
+        const x = Math.cos(screw.angle) * (outerRadius - 8);
+        const y = Math.sin(screw.angle) * (outerRadius - 8);
 
         // Screw head
         ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
         ctx.fillStyle = COLORS.brassDark;
         ctx.fill();
 
         // Screw slot
         ctx.beginPath();
-        ctx.moveTo(x - 3, y);
-        ctx.lineTo(x + 3, y);
+        ctx.moveTo(x - 5, y);
+        ctx.lineTo(x + 5, y);
         ctx.strokeStyle = COLORS.darkBrown;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2;
         ctx.stroke();
     }
 
@@ -287,19 +287,18 @@ function generateNeedle() {
     ctx.translate(CENTER, CENTER);
 
     // Needle pointing up (will be rotated in-game)
-    // The origin is set to (0.5, 0.85) in code, so we draw relative to that
-    const needleLength = 70; // Increased for larger dial
-    const pivotY = 35; // Match dial center ring position
+    const needleLength = 105; // 50% larger
+    const pivotY = 53; // Match dial center ring position
 
     // Draw needle shadow first
     ctx.save();
-    ctx.translate(2, 2);
+    ctx.translate(3, 3);
     ctx.beginPath();
     ctx.moveTo(0, pivotY - needleLength); // Tip
-    ctx.lineTo(-4, pivotY - 8);
-    ctx.lineTo(-3, pivotY + 8);
-    ctx.lineTo(3, pivotY + 8);
-    ctx.lineTo(4, pivotY - 8);
+    ctx.lineTo(-6, pivotY - 12);
+    ctx.lineTo(-4, pivotY + 12);
+    ctx.lineTo(4, pivotY + 12);
+    ctx.lineTo(6, pivotY - 12);
     ctx.closePath();
     ctx.fillStyle = COLORS.shadow;
     ctx.fill();
@@ -308,13 +307,13 @@ function generateNeedle() {
     // Needle body
     ctx.beginPath();
     ctx.moveTo(0, pivotY - needleLength); // Tip (pointing up)
-    ctx.lineTo(-3.5, pivotY - 8);
-    ctx.lineTo(-2.5, pivotY + 6);
-    ctx.lineTo(2.5, pivotY + 6);
-    ctx.lineTo(3.5, pivotY - 8);
+    ctx.lineTo(-5, pivotY - 12);
+    ctx.lineTo(-3.5, pivotY + 9);
+    ctx.lineTo(3.5, pivotY + 9);
+    ctx.lineTo(5, pivotY - 12);
     ctx.closePath();
 
-    const needleGradient = ctx.createLinearGradient(-4, 0, 4, 0);
+    const needleGradient = ctx.createLinearGradient(-6, 0, 6, 0);
     needleGradient.addColorStop(0, '#4a0000');
     needleGradient.addColorStop(0.5, COLORS.needleRed);
     needleGradient.addColorStop(1, '#4a0000');
@@ -323,11 +322,11 @@ function generateNeedle() {
 
     // Needle center cap
     ctx.beginPath();
-    ctx.arc(0, pivotY, 7, 0, Math.PI * 2);
+    ctx.arc(0, pivotY, 11, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.darkBrown;
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(0, pivotY, 4.5, 0, Math.PI * 2);
+    ctx.arc(0, pivotY, 7, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.brass;
     ctx.fill();
 
