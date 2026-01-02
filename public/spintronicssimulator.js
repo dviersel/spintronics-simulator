@@ -506,30 +506,30 @@ function create ()
     this.phonographbutton.setButtonType('toggle');
     this.phonographbutton.setTooltipString('Phonograph [P]', 'right');
     this.phonographbutton.setKeyboardShortcut('P');
-    this.diodebutton = new ToggleButton(controlscene, 'diode', buttonX, topMargin + 35+7*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'diode-icon', onSwitchToggled, 'button-disabled-background');
-    this.diodebutton.setButtonType('toggle');
-    this.diodebutton.setTooltipString('Diode [D]', 'right');
-    this.diodebutton.setKeyboardShortcut('D');
-    this.buttonbutton = new ToggleButton(controlscene, 'button', buttonX, topMargin + 35+8*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'button-icon', onSwitchToggled, 'button-disabled-background');
-    this.buttonbutton.setButtonType('toggle');
-    this.buttonbutton.setTooltipString('Switch [U]', 'right');
-    this.buttonbutton.setKeyboardShortcut('U');
-    this.transistorbutton = new ToggleButton(controlscene, 'transistor', buttonX, topMargin + 35+9*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'transistor-icon', onSwitchToggled, 'button-disabled-background');
-    this.transistorbutton.setButtonType('toggle');
-    this.transistorbutton.setTooltipString('Transistor [T]', 'right');
-    this.transistorbutton.setKeyboardShortcut('T');
-    this.levelchangerbutton = new ToggleButton(controlscene, 'level-changer', buttonX, topMargin + 35+10*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'level-changer-icon', onSwitchToggled, 'button-disabled-background');
-    this.levelchangerbutton.setButtonType('toggle');
-    this.levelchangerbutton.setTooltipString('Level changer [L]', 'right');
-    this.levelchangerbutton.setKeyboardShortcut('L');
-    this.tilebutton = new ToggleButton(controlscene, 'tile', buttonX, topMargin + 35+11*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'tile-icon', onSwitchToggled, 'button-disabled-background');
-    this.tilebutton.setButtonType('toggle');
-    this.tilebutton.setTooltipString('Tile [H]', 'right');
-    this.tilebutton.setKeyboardShortcut('H');
-    this.ammeterbutton = new ToggleButton(controlscene, 'ammeter', buttonX, topMargin + 35+12*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'ammeter-icon', onSwitchToggled, 'button-disabled-background');
+    this.ammeterbutton = new ToggleButton(controlscene, 'ammeter', buttonX, topMargin + 35+7*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'ammeter-icon', onSwitchToggled, 'button-disabled-background');
     this.ammeterbutton.setButtonType('toggle');
     this.ammeterbutton.setTooltipString('Gauge Ammeter [A]', 'right');
     this.ammeterbutton.setKeyboardShortcut('A');
+    this.diodebutton = new ToggleButton(controlscene, 'diode', buttonX, topMargin + 35+8*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'diode-icon', onSwitchToggled, 'button-disabled-background');
+    this.diodebutton.setButtonType('toggle');
+    this.diodebutton.setTooltipString('Diode [D]', 'right');
+    this.diodebutton.setKeyboardShortcut('D');
+    this.buttonbutton = new ToggleButton(controlscene, 'button', buttonX, topMargin + 35+9*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'button-icon', onSwitchToggled, 'button-disabled-background');
+    this.buttonbutton.setButtonType('toggle');
+    this.buttonbutton.setTooltipString('Switch [U]', 'right');
+    this.buttonbutton.setKeyboardShortcut('U');
+    this.transistorbutton = new ToggleButton(controlscene, 'transistor', buttonX, topMargin + 35+10*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'transistor-icon', onSwitchToggled, 'button-disabled-background');
+    this.transistorbutton.setButtonType('toggle');
+    this.transistorbutton.setTooltipString('Transistor [T]', 'right');
+    this.transistorbutton.setKeyboardShortcut('T');
+    this.levelchangerbutton = new ToggleButton(controlscene, 'level-changer', buttonX, topMargin + 35+11*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'level-changer-icon', onSwitchToggled, 'button-disabled-background');
+    this.levelchangerbutton.setButtonType('toggle');
+    this.levelchangerbutton.setTooltipString('Level changer [L]', 'right');
+    this.levelchangerbutton.setKeyboardShortcut('L');
+    this.tilebutton = new ToggleButton(controlscene, 'tile', buttonX, topMargin + 35+12*buttonSpacing, buttonWidth, buttonHeight, 'button-default-background', 'button-hover-background', 'button-selected-background', 'tile-icon', onSwitchToggled, 'button-disabled-background');
+    this.tilebutton.setButtonType('toggle');
+    this.tilebutton.setTooltipString('Tile [H]', 'right');
+    this.tilebutton.setKeyboardShortcut('H');
 
 
     // Right side toolbar
@@ -2740,6 +2740,7 @@ function positionLeftSideButtons()
         this.capacitorbutton,
         this.inductorbutton,
         this.phonographbutton,
+        this.ammeterbutton,
         this.diodebutton,
         this.buttonbutton,
         this.transistorbutton,
