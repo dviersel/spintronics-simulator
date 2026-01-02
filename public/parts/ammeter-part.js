@@ -30,7 +30,10 @@ export class AmmeterPart extends PartBase {
         this.sprocketImage.setDepth(10);
 
         // Create the gauge dial background (static)
-        this.dialImage = scene.add.image(x, y, 'ammeter-dial');
+        // Note: dial image has slight offset, compensate with position adjustment
+        this.dialOffsetX = -1;
+        this.dialOffsetY = -2;
+        this.dialImage = scene.add.image(x + this.dialOffsetX, y + this.dialOffsetY, 'ammeter-dial');
         this.dialImage.setScale(0.5);
         this.dialImage.setDepth(12);
 
@@ -44,6 +47,32 @@ export class AmmeterPart extends PartBase {
         this.needleImage.setScale(0.5);
         this.needleImage.setDepth(13);
         this.needleImage.setOrigin(0.5, 0.677); // Pivot at center ring: (CENTER + pivotY) / SIZE = (150 + 53) / 300 = 0.677
+
+        // Scale parameters
+        this.scaleRadius = 40; // Radius for scale markings
+        this.scaleLabelRadius = 32; // Radius for value labels
+        this.scaleAngleMax = 135 * Math.PI / 180; // ±135 degrees
+
+        // Create dynamic scale graphics (tick marks)
+        this.scaleGraphics = scene.add.graphics();
+        this.scaleGraphics.setDepth(12.5);
+
+        // Create scale value labels (-max, 0, +max)
+        const labelStyle = { font: '9px Roboto', color: '#4a3728', fontStyle: 'bold' };
+        this.minLabel = scene.add.text(x, y, '', labelStyle);
+        this.minLabel.setOrigin(0.5, 0.5);
+        this.minLabel.setDepth(12.5);
+
+        this.zeroLabel = scene.add.text(x, y, '0', labelStyle);
+        this.zeroLabel.setOrigin(0.5, 0.5);
+        this.zeroLabel.setDepth(12.5);
+
+        this.maxLabel = scene.add.text(x, y, '', labelStyle);
+        this.maxLabel.setOrigin(0.5, 0.5);
+        this.maxLabel.setDepth(12.5);
+
+        // Draw initial scale
+        this.drawScale(x, y);
 
         // Create scale label text (positioned inside dial, in lower portion)
         this.scaleText = scene.add.text(x, y + 22, AmmeterPart.scaleLabels[this.scaleIndex], {
@@ -131,6 +160,73 @@ export class AmmeterPart extends PartBase {
         }
     }
 
+    drawScale(centerX, centerY) {
+        const g = this.scaleGraphics;
+        g.clear();
+
+        // Draw cream-colored arc to cover static dial markings
+        // This creates a clean background for our dynamic scale
+        g.fillStyle(0xf5f0e1, 1); // Cream color matching dial
+        g.beginPath();
+        g.arc(centerX, centerY, 44, 0, Math.PI * 2);
+        g.fillPath();
+
+        // Number of major and minor tick marks
+        const majorTicks = 10; // 5 on each side of zero
+        const minorTicksPerMajor = 5;
+        const totalTicks = majorTicks * minorTicksPerMajor;
+
+        // Draw tick marks from -135° to +135°
+        const angleRange = this.scaleAngleMax * 2; // Total 270 degrees
+        const startAngle = -Math.PI / 2 - this.scaleAngleMax; // Start at -135° from top
+
+        for (let i = 0; i <= totalTicks; i++) {
+            const fraction = i / totalTicks;
+            const angle = startAngle + fraction * angleRange;
+
+            const isMajor = (i % minorTicksPerMajor === 0);
+            const tickLength = isMajor ? 6 : 3;
+            const tickWidth = isMajor ? 1.5 : 0.75;
+
+            const innerRadius = this.scaleRadius - tickLength;
+            const outerRadius = this.scaleRadius;
+
+            const x1 = centerX + Math.cos(angle) * innerRadius;
+            const y1 = centerY + Math.sin(angle) * innerRadius;
+            const x2 = centerX + Math.cos(angle) * outerRadius;
+            const y2 = centerY + Math.sin(angle) * outerRadius;
+
+            g.lineStyle(tickWidth, 0x4a3728, 1);
+            g.beginPath();
+            g.moveTo(x1, y1);
+            g.lineTo(x2, y2);
+            g.strokePath();
+        }
+
+        // Position value labels
+        const max = this.maxCurrent;
+
+        // Min label at -135° (left)
+        const minAngle = -Math.PI / 2 - this.scaleAngleMax;
+        const minX = centerX + Math.cos(minAngle) * this.scaleLabelRadius;
+        const minY = centerY + Math.sin(minAngle) * this.scaleLabelRadius;
+        this.minLabel.setPosition(minX, minY);
+        this.minLabel.setText('-' + max);
+
+        // Zero label at top (0°)
+        const zeroAngle = -Math.PI / 2;
+        const zeroX = centerX + Math.cos(zeroAngle) * this.scaleLabelRadius;
+        const zeroY = centerY + Math.sin(zeroAngle) * this.scaleLabelRadius;
+        this.zeroLabel.setPosition(zeroX, zeroY);
+
+        // Max label at +135° (right)
+        const maxAngle = -Math.PI / 2 + this.scaleAngleMax;
+        const maxX = centerX + Math.cos(maxAngle) * this.scaleLabelRadius;
+        const maxY = centerY + Math.sin(maxAngle) * this.scaleLabelRadius;
+        this.maxLabel.setPosition(maxX, maxY);
+        this.maxLabel.setText('+' + max);
+    }
+
     updatePhysics() {
         // Update sprocket rotation to match physics body
         this.sprocketImage.rotation = this.ammeterBody.getAngle();
@@ -171,6 +267,9 @@ export class AmmeterPart extends PartBase {
         this.maxCurrent = AmmeterPart.scaleRanges[this.scaleIndex];
         this.scaleText.setText(AmmeterPart.scaleLabels[this.scaleIndex]);
 
+        // Redraw scale with new range values
+        this.drawScale(this.x, this.y);
+
         // Wake up the body to ensure physics updates
         this.ammeterBody.setAwake(true);
     }
@@ -203,11 +302,14 @@ export class AmmeterPart extends PartBase {
         this.y = y;
 
         if (this.sprocketImage) this.sprocketImage.setPosition(x, y);
-        if (this.dialImage) this.dialImage.setPosition(x, y);
+        if (this.dialImage) this.dialImage.setPosition(x + this.dialOffsetX, y + this.dialOffsetY);
         if (this.bezelImage) this.bezelImage.setPosition(x, y);
         if (this.needleImage) this.needleImage.setPosition(x, y);
         if (this.scaleText) this.scaleText.setPosition(x, y + 22);
         if (this.currentText) this.currentText.setPosition(x, y + 36);
+
+        // Redraw scale at new position
+        if (this.scaleGraphics) this.drawScale(x, y);
     }
 
     destroy() {
@@ -215,6 +317,10 @@ export class AmmeterPart extends PartBase {
         this.dialImage.destroy();
         this.bezelImage.destroy();
         this.needleImage.destroy();
+        this.scaleGraphics.destroy();
+        this.minLabel.destroy();
+        this.zeroLabel.destroy();
+        this.maxLabel.destroy();
         this.scaleText.destroy();
         this.currentText.destroy();
 
